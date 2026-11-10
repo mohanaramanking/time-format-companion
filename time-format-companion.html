@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101322">
+  <title>Time Format Companion</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101322;
+      color: #f5f6ff;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 48px 20px;
+      background:
+        radial-gradient(ellipse at 12% 0%, #333165 0, transparent 38%),
+        radial-gradient(ellipse at 95% 26%, #16484b 0, transparent 32%),
+        #101322;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .page { width: min(100%, 980px); margin: 0 auto; }
+    .topline { display: flex; align-items: center; gap: 10px; color: #b6b8cf; font-size: .88rem; }
+    .pulse { width: 9px; height: 9px; border-radius: 50%; background: #69e5b1; box-shadow: 0 0 14px #69e5b1; }
+    .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+    h1 { margin: 18px 0 8px; font-size: clamp(2.2rem, 6vw, 4rem); letter-spacing: -.055em; line-height: 1.05; animation: rise-in .65s both; }
+    h1 span { color: #a9a0ff; }
+    .intro { max-width: 610px; margin: 0; color: #b7bad0; font-size: 1.05rem; line-height: 1.65; animation: rise-in .65s .1s both; }
+
+    .panel {
+      margin-top: 32px;
+      padding: clamp(20px, 4vw, 34px);
+      border: 1px solid #ffffff1b;
+      border-radius: 24px;
+      background: #1b1e30d9;
+      box-shadow: 0 24px 80px #0005;
+      backdrop-filter: blur(16px);
+      animation: rise-in .75s .16s both;
+    }
+
+    .section-label { margin: 0 0 16px; color: #9da2bd; font-size: .76rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field { min-width: 0; }
+    label { display: block; margin-bottom: 8px; color: #d7d9e8; font-size: .88rem; font-weight: 650; }
+    input, select {
+      width: 100%;
+      min-height: 50px;
+      padding: 0 14px;
+      border: 1px solid #ffffff20;
+      border-radius: 12px;
+      outline: none;
+      background: #111424;
+      color: #f5f6ff;
+    }
+    input:focus, select:focus { border-color: #9c91ff; box-shadow: 0 0 0 3px #9c91ff2b; }
+    .zone-row { display: grid; grid-template-columns: 1fr 46px 1fr; gap: 12px; align-items: end; margin-top: 18px; }
+    .swap {
+      width: 46px;
+      height: 50px;
+      border: 1px solid #ffffff20;
+      border-radius: 12px;
+      background: #25283b;
+      color: #c1baff;
+      font-size: 1.2rem;
+      transition: transform .35s ease, background-color .2s ease;
+    }
+    .swap:hover { transform: rotate(180deg); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .primary, .secondary { min-height: 46px; padding: 0 19px; border: 0; border-radius: 12px; font-weight: 750; }
+    .primary { background: linear-gradient(110deg, #a69aff, #74deca); color: #141627; }
+    .secondary { border: 1px solid #ffffff20; background: #25283b; color: #e7e8f4; }
+    button:hover { filter: brightness(1.1); }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+    .error { min-height: 1.4em; margin: 13px 0 0; color: #ff9aaf; font-size: .9rem; }
+    .results { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+    .result-card { padding: 20px; border: 1px solid #ffffff17; border-radius: 18px; background: #141727; animation: rise-in .55s both; transition: transform .25s ease, border-color .25s ease; }
+    .result-card:nth-child(2) { animation-delay: .12s; }
+    .result-card:hover { transform: translateY(-3px); border-color: #ffffff30; }
+    .result-card.source { border-top: 3px solid #80aaff; }
+    .result-card.destination { border-top: 3px solid #d5a5ff; }
+    .result-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .result-head h3 { margin: 0; font-size: .98rem; }
+    .badge { padding: 5px 9px; border-radius: 999px; background: #ffffff10; color: #c8c9da; font-size: .72rem; white-space: nowrap; }
+    .zone-name { margin: 13px 0 18px; color: #aeb2cb; font-size: .84rem; overflow-wrap: anywhere; }
+    .clock-face { display: block; width: 150px; height: 150px; margin: 0 auto 18px; overflow: visible; }
+    .clock-face .dial { fill: #20243a; stroke: #ffffff24; stroke-width: 1.5; }
+    .clock-face .tick { stroke: #9298b6; stroke-width: 1.5; stroke-linecap: round; }
+    .clock-face .major { stroke: #dce0f5; stroke-width: 2.5; }
+    .clock-face text { fill: #c9cce0; font-size: 7px; font-weight: 650; text-anchor: middle; dominant-baseline: middle; }
+    .clock-face .hour-hand { stroke: #f5f6ff; stroke-width: 4; stroke-linecap: round; }
+    .clock-face .minute-hand { stroke: #a9a0ff; stroke-width: 2.8; stroke-linecap: round; }
+    .clock-face .second-hand { stroke: #69e5b1; stroke-width: 1.2; stroke-linecap: round; }
+    .clock-face .hour-hand, .clock-face .minute-hand, .clock-face .second-hand { transition: transform .55s cubic-bezier(.2, .8, .2, 1); }
+    .clock-face .pin { fill: #69e5b1; }
+    .digital-clock { display: flex; justify-content: center; align-items: center; gap: 9px; margin: 0 auto 18px; padding: 11px 15px; width: fit-content; max-width: 100%; border: 1px solid #ffffff17; border-radius: 12px; background: #0c0f1b; box-shadow: inset 0 0 18px #0005; font-variant-numeric: tabular-nums; }
+    .digital-time { color: #8dffd4; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: clamp(1.35rem, 4vw, 1.8rem); font-weight: 700; letter-spacing: .04em; text-shadow: 0 0 14px #69e5b155; }
+    .digital-ampm { color: #a9a0ff; font-size: .82rem; font-weight: 750; }
+    .wave-buddy { position: relative; display: grid; flex: 0 0 44px; place-items: center; width: 44px; height: 50px; }
+    .wave-buddy svg { width: 44px; height: 50px; overflow: visible; }
+    .wave-buddy .skin { fill: #ffd2ad; }
+    .wave-buddy .hair { fill: #49365e; }
+    .wave-buddy .shirt { fill: #a69aff; }
+    .wave-buddy .limb { fill: none; stroke: #ffd2ad; stroke-width: 3.5; stroke-linecap: round; }
+    .wave-buddy .wave-arm { transform-box: view-box; transform-origin: 25px 23px; animation: say-hello .7s ease-in-out infinite alternate; }
+    .wave-buddy .eye { fill: #252238; stroke: #fff3e8; stroke-width: .4; }
+    .hello-bubble { position: absolute; z-index: 1; top: -19px; left: 50%; padding: 2px 6px; transform: translateX(-50%); border: 1px solid #ffffff25; border-radius: 8px; background: #a69aff; color: #171529; font-size: .6rem; font-weight: 850; line-height: 1.25; white-space: nowrap; }
+    .motivation { min-height: 2.8em; margin: -7px 0 17px; color: #c8c0ff; font-size: .84rem; line-height: 1.5; text-align: center; }
+    .live-label { margin: 0 0 7px; color: #898fae; font-size: .69rem; font-weight: 750; letter-spacing: .12em; text-align: center; text-transform: uppercase; }
+    .trend { margin-top: 20px; padding: 20px; border: 1px solid #ffffff17; border-radius: 18px; background: #141727; }
+    .trend-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+    .trend-title { margin: 0; font-size: 1rem; }
+    .trend-description { margin: 6px 0 0; color: #969bb7; font-size: .82rem; line-height: 1.5; }
+    .trend-actions { display: flex; gap: 8px; align-items: center; }
+    .trend-button { min-height: 38px; padding: 0 13px; border: 1px solid #ffffff20; border-radius: 10px; background: #25283b; color: #e7e8f4; font-size: .8rem; font-weight: 700; }
+    .trend-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+    .trend-item { min-width: 0; padding: 13px 15px; border: 1px solid #ffffff14; border-radius: 12px; background: #1b1e30; animation: rise-in .4s both; transition: transform .2s ease, border-color .2s ease, background-color .2s ease; }
+    .trend-item:hover { transform: translateY(-2px); border-color: #a9a0ff66; background: #22253a; }
+    .trend-item:nth-child(2) { animation-delay: .04s; }
+    .trend-item:nth-child(3) { animation-delay: .08s; }
+    .trend-item:nth-child(4) { animation-delay: .12s; }
+    .trend-item:nth-child(5) { animation-delay: .16s; }
+    .trend-item:nth-child(6) { animation-delay: .2s; }
+    .trend-item:nth-child(7) { animation-delay: .24s; }
+    .trend-item:nth-child(8) { animation-delay: .28s; }
+    .trend-item:nth-child(9) { animation-delay: .32s; }
+    .trend-item:nth-child(10) { animation-delay: .36s; }
+    .trend-item a { color: #e5e3ff; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+    .trend-item a:hover { color: #b7adff; text-decoration: underline; }
+    .trend-status { min-height: 1.4em; margin: 13px 0 0; color: #969bb7; font-size: .82rem; }
+    .trend-source-note { margin: 12px 0 0; color: #7f849e; font-size: .72rem; }
+    @media (max-width: 640px) { .trend-list { grid-template-columns: 1fr; } }
+    .time-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .time { font-size: clamp(2rem, 5vw, 3rem); font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: -.05em; }
+    .ampm { color: #a9a0ff; font-size: 1.05rem; font-weight: 750; }
+    .date { margin: 7px 0 0; color: #c1c4d8; font-size: .92rem; }
+    .iso { margin: 14px 0 0; color: #898fae; font-size: .79rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .footnote { margin: 18px 0 0; color: #898fae; font-size: .78rem; line-height: 1.5; }
+    .clock { margin-top: 20px; color: #9da2bd; font-size: .84rem; text-align: center; }
+
+    @keyframes rise-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: .7; box-shadow: 0 0 8px #69e5b188; }
+      50% { opacity: 1; box-shadow: 0 0 17px #69e5b1; }
+    }
+
+    @keyframes say-hello {
+      from { transform: rotate(-12deg); }
+      to { transform: rotate(18deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 30px 14px; }
+      .fields, .results { grid-template-columns: 1fr; }
+      .zone-row { grid-template-columns: 1fr 42px 1fr; gap: 8px; }
+      .swap { width: 42px; }
+      .panel { border-radius: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topline"><span class="pulse" aria-hidden="true"></span> Your friendly time converter</div>
+    <h1>Time, made <span>clear.</span></h1>
+    <p class="intro">See a time in the formats you use and compare it across time zones. Pick a date to account for daylight-saving changes.</p>
+
+    <section class="panel" aria-labelledby="convert-heading">
+      <h2 class="section-label" id="convert-heading">Choose a time</h2>
+      <div class="fields">
+        <div class="field">
+          <label for="datetime">Date and time</label>
+          <input id="datetime" type="datetime-local" step="60">
+        </div>
+        <div class="field">
+          <label for="format">Show time as</label>
+          <select id="format">
+            <option value="12">12-hour and 24-hour</option>
+            <option value="24">24-hour first</option>
+          </select>
+        </div>
+      </div>
+      <div class="zone-row">
+        <div class="field">
+          <label for="source">From time zone</label>
+          <select id="source"></select>
+        </div>
+        <button class="swap" id="swap" type="button" aria-label="Swap time zones" title="Swap time zones">⇄</button>
+        <div class="field">
+          <label for="destination">To time zone</label>
+          <select id="destination"></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="convert" type="button">Convert time</button>
+        <button class="secondary" id="now" type="button">Use now</button>
+      </div>
+      <p class="error" id="error" role="status" aria-live="polite"></p>
+
+      <h2 class="section-label" style="margin-top: 24px">Your result</h2>
+      <div class="results" aria-live="polite">
+        <article class="result-card source">
+          <div class="result-head"><h3>🟦 Starting time</h3><span class="badge">FROM</span></div>
+          <p class="zone-name" id="source-name">—</p>
+          <svg class="clock-face" viewBox="0 0 100 100" role="img" aria-label="Analog clock showing starting time">
+            <circle class="dial" cx="50" cy="50" r="46"/>
+            <g aria-hidden="true">
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(30 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(60 50 50)"/>
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13" transform="rotate(90 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(120 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(150 50 50)"/>
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13" transform="rotate(180 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(210 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(240 50 50)"/>
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13" transform="rotate(270 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(300 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(330 50 50)"/>
+              <text x="50" y="19">12</text><text x="81" y="52">3</text>
+              <text x="50" y="84">6</text><text x="19" y="52">9</text>
+            </g>
+            <g id="source-hands" aria-hidden="true">
+              <line class="hour-hand" x1="50" y1="51" x2="50" y2="34"/>
+              <line class="minute-hand" x1="50" y1="51" x2="50" y2="22"/>
+              <line class="second-hand" x1="50" y1="53" x2="50" y2="17"/>
+              <circle class="pin" cx="50" cy="50" r="2.5"/>
+            </g>
+          </svg>
+          <p class="live-label">Live digital clock</p>
+          <div class="digital-clock" role="timer" aria-label="Live digital clock">
+            <span class="wave-buddy" aria-hidden="true">
+              <span class="hello-bubble" id="source-greeting">Hi!</span>
+              <svg viewBox="0 0 42 50">
+                <path class="hair" d="M12 12a9 9 0 0 1 18 0v5H12z"/>
+                <circle class="skin" cx="21" cy="15" r="9" stroke="#fff1df" stroke-width=".8"/>
+                <path class="hair" d="M12 14C12 4 17 2 22 3c6 0 9 5 9 11l-4-3-3 3-4-4-4 4-2-2z"/>
+                <circle class="eye" cx="17.5" cy="16" r="1.5"/>
+                <circle class="eye" cx="24.5" cy="16" r="1.5"/>
+                <path d="M18 20q3 3 6 0" fill="none" stroke="#a84460" stroke-width="1.4" stroke-linecap="round"/>
+                <path class="shirt" d="M15 23q6-4 12 0l4 14H11z"/>
+                <path class="limb" d="M15 26 9 33"/>
+                <path class="limb" d="M15 36 13 45M27 36l3 9"/>
+                <g class="wave-arm">
+                  <path class="limb" d="M27 25 31 16 32 8"/>
+                  <path class="limb" d="M32 9 29 4M32 9l2-6M32 9l5-3"/>
+                </g>
+              </svg>
+            </span>
+            <span class="digital-time" id="source-live-time">--:--:--</span>
+            <span class="digital-ampm" id="source-live-ampm"></span>
+          </div>
+          <p class="motivation" id="source-motivation"></p>
+          <div class="time-line"><span class="time" id="source-time">—</span><span class="ampm" id="source-ampm"></span></div>
+          <p class="date" id="source-date">Choose a date and time</p>
+          <p class="iso" id="source-iso"></p>
+        </article>
+        <article class="result-card destination">
+          <div class="result-head"><h3>🟪 Converted time</h3><span class="badge">TO</span></div>
+          <p class="zone-name" id="destination-name">—</p>
+          <svg class="clock-face" viewBox="0 0 100 100" role="img" aria-label="Analog clock showing converted time">
+            <circle class="dial" cx="50" cy="50" r="46"/>
+            <g aria-hidden="true">
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(30 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(60 50 50)"/>
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13" transform="rotate(90 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(120 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(150 50 50)"/>
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13" transform="rotate(180 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(210 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(240 50 50)"/>
+              <line class="tick major" x1="50" y1="8" x2="50" y2="13" transform="rotate(270 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(300 50 50)"/>
+              <line class="tick" x1="50" y1="8" x2="50" y2="11" transform="rotate(330 50 50)"/>
+              <text x="50" y="19">12</text><text x="81" y="52">3</text>
+              <text x="50" y="84">6</text><text x="19" y="52">9</text>
+            </g>
+            <g id="destination-hands" aria-hidden="true">
+              <line class="hour-hand" x1="50" y1="51" x2="50" y2="34"/>
+              <line class="minute-hand" x1="50" y1="51" x2="50" y2="22"/>
+              <line class="second-hand" x1="50" y1="53" x2="50" y2="17"/>
+              <circle class="pin" cx="50" cy="50" r="2.5"/>
+            </g>
+          </svg>
+          <p class="live-label">Live digital clock</p>
+          <div class="digital-clock" role="timer" aria-label="Live digital clock">
+            <span class="wave-buddy" aria-hidden="true">
+              <span class="hello-bubble" id="destination-greeting">Hi!</span>
+              <svg viewBox="0 0 42 50">
+                <path class="hair" d="M12 12a9 9 0 0 1 18 0v5H12z"/>
+                <circle class="skin" cx="21" cy="15" r="9" stroke="#fff1df" stroke-width=".8"/>
+                <path class="hair" d="M12 14C12 4 17 2 22 3c6 0 9 5 9 11l-4-3-3 3-4-4-4 4-2-2z"/>
+                <circle class="eye" cx="17.5" cy="16" r="1.5"/>
+                <circle class="eye" cx="24.5" cy="16" r="1.5"/>
+                <path d="M18 20q3 3 6 0" fill="none" stroke="#a84460" stroke-width="1.4" stroke-linecap="round"/>
+                <path class="shirt" d="M15 23q6-4 12 0l4 14H11z"/>
+                <path class="limb" d="M15 26 9 33"/>
+                <path class="limb" d="M15 36 13 45M27 36l3 9"/>
+                <g class="wave-arm">
+                  <path class="limb" d="M27 25 31 16 32 8"/>
+                  <path class="limb" d="M32 9 29 4M32 9l2-6M32 9l5-3"/>
+                </g>
+              </svg>
+            </span>
+            <span class="digital-time" id="destination-live-time">--:--:--</span>
+            <span class="digital-ampm" id="destination-live-ampm"></span>
+          </div>
+          <p class="motivation" id="destination-motivation"></p>
+          <div class="time-line"><span class="time" id="destination-time">—</span><span class="ampm" id="destination-ampm"></span></div>
+          <p class="date" id="destination-date">Your converted time appears here</p>
+          <p class="iso" id="destination-iso"></p>
+        </article>
+      </div>
+      <section class="trend" aria-labelledby="trend-title">
+        <div class="trend-head">
+          <div>
+            <h3 class="trend-title" id="trend-title">What’s trending?</h3>
+            <p class="trend-description" id="trend-region">Popular searches for your selected destination region.</p>
+          </div>
+          <div class="trend-actions">
+            <a class="trend-button" id="trends-link" href="https://trends.google.com/trending" target="_blank" rel="noopener noreferrer">Open Google Trends ↗</a>
+            <button class="trend-button" id="refresh-trends" type="button">Refresh</button>
+          </div>
+        </div>
+        <p class="trend-status" id="trend-status" role="status" aria-live="polite">Loading popular searches…</p>
+        <ul class="trend-list" id="trend-list"></ul>
+        <p class="trend-source-note">Live searches from Google Trends, loaded through rss2json.com. Trends are region-specific and may change throughout the day.</p>
+      </section>
+      <p class="footnote">Times are calculated using your browser’s time-zone data. Some locations have ambiguous or skipped local times when daylight-saving clocks change.</p>
+    </section>
+    <p class="clock" id="clock"></p>
+  </main>
+
+  <script>
+    const zones = [
+      ["Asia/Kolkata", "India · Kolkata", "IN"],
+      ["America/New_York", "United States · New York", "US"],
+      ["America/Los_Angeles", "United States · Los Angeles", "US"],
+      ["America/Chicago", "United States · Chicago", "US"],
+      ["Europe/London", "United Kingdom · London", "GB"],
+      ["Europe/Paris", "France · Paris", "FR"],
+      ["Europe/Berlin", "Germany · Berlin", "DE"],
+      ["Asia/Dubai", "United Arab Emirates · Dubai", "AE"],
+      ["Asia/Singapore", "Singapore", "SG"],
+      ["Asia/Tokyo", "Japan · Tokyo", "JP"],
+      ["Australia/Sydney", "Australia · Sydney", "AU"],
+      ["UTC", "UTC", null]
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const sourceSelect = $("source");
+    const destinationSelect = $("destination");
+    const dateInput = $("datetime");
+    const formatterCache = new Map();
+
+    for (const [zone, label] of zones) {
+      sourceSelect.add(new Option(label, zone));
+      destinationSelect.add(new Option(label, zone));
+    }
+    sourceSelect.value = "Asia/Kolkata";
+    destinationSelect.value = "Europe/London";
+
+    function formatter(zone, options) {
+      const key = zone + JSON.stringify(options);
+      if (!formatterCache.has(key)) {
+        formatterCache.set(key, new Intl.DateTimeFormat("en-GB", { timeZone: zone, ...options }));
+      }
+      return formatterCache.get(key);
+    }
+
+    function partsInZone(date, zone) {
+      return Object.fromEntries(formatter(zone, {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hourCycle: "h23"
+      }).formatToParts(date).filter((part) => part.type !== "literal").map((part) => [part.type, Number(part.value)]));
+    }
+
+    function zonedLocalToDate(value, zone) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+      if (!match) throw new Error("Please choose a valid date and time.");
+      const wanted = match.slice(1).map(Number);
+      const [year, month, day, hour, minute] = wanted;
+      const target = Date.UTC(year, month - 1, day, hour, minute);
+      let guess = target;
+
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const actual = partsInZone(new Date(guess), zone);
+        const represented = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute, actual.second);
+        const difference = target - represented;
+        if (difference === 0) break;
+        guess += difference;
+      }
+
+      const result = new Date(guess);
+      const actual = partsInZone(result, zone);
+      if (actual.year !== year || actual.month !== month || actual.day !== day || actual.hour !== hour || actual.minute !== minute) {
+        throw new Error("That local time does not exist in this time zone because the clocks change. Choose another time.");
+      }
+      return result;
+    }
+
+    function display(date, zone, prefix) {
+      const is24 = $("format").value === "24";
+      const timeOptions = is24
+        ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }
+        : { hour: "numeric", minute: "2-digit", hour12: true };
+      const time = formatter(zone, timeOptions).format(date);
+      const split = is24 ? [time, ""] : time.match(/^(.+?)\s*(AM|PM)$/i)?.slice(1) || [time, ""];
+
+      $(prefix + "-time").textContent = split[0];
+      $(prefix + "-ampm").textContent = split[1];
+      $(prefix + "-date").textContent = formatter(zone, {
+        weekday: "long", year: "numeric", month: "long", day: "numeric"
+      }).format(date);
+      $(prefix + "-iso").textContent = formatter(zone, {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", timeZoneName: "short"
+      }).format(date);
+      $(prefix + "-name").textContent = zones.find(([id]) => id === zone)?.[1] || zone;
+      const parts = partsInZone(date, zone);
+      const hourAngle = ((parts.hour % 12) + parts.minute / 60) * 30;
+      const minuteAngle = (parts.minute + parts.second / 60) * 6;
+      const secondAngle = parts.second * 6;
+      const hands = $(prefix + "-hands");
+      hands.querySelector(".hour-hand").setAttribute("transform", "rotate(" + hourAngle + " 50 50)");
+      hands.querySelector(".minute-hand").setAttribute("transform", "rotate(" + minuteAngle + " 50 50)");
+      hands.querySelector(".second-hand").setAttribute("transform", "rotate(" + secondAngle + " 50 50)");
+      hands.parentElement.setAttribute("aria-label", "Analog clock showing " + formatter(zone, {
+        hour: "numeric", minute: "2-digit", timeZoneName: "short"
+      }).format(date));
+    }
+
+    function convert() {
+      $("error").textContent = "";
+      try {
+        const zoneFrom = sourceSelect.value;
+        const zoneTo = destinationSelect.value;
+        const instant = zonedLocalToDate(dateInput.value, zoneFrom);
+        display(instant, zoneFrom, "source");
+        display(instant, zoneTo, "destination");
+      } catch (error) {
+        $("error").textContent = error instanceof RangeError
+          ? "This time zone is not supported by your browser."
+          : error.message;
+      }
+    }
+
+    function setNow() {
+      const zone = sourceSelect.value;
+      const now = new Date();
+      const parts = partsInZone(now, zone);
+      dateInput.value = [
+        String(parts.year).padStart(4, "0"), "-",
+        String(parts.month).padStart(2, "0"), "-",
+        String(parts.day).padStart(2, "0"), "T",
+        String(parts.hour).padStart(2, "0"), ":",
+        String(parts.minute).padStart(2, "0")
+      ].join("");
+      convert();
+    }
+
+    function updateLiveClocks() {
+      const now = new Date();
+      const is24 = $("format").value === "24";
+      for (const [prefix, zone] of [["source", sourceSelect.value], ["destination", destinationSelect.value]]) {
+        const timeOptions = is24
+          ? { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }
+          : { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true };
+        const live = formatter(zone, timeOptions).format(now);
+        const parts = is24 ? [live, ""] : live.match(/^(.+?)\s*(AM|PM)$/i)?.slice(1) || [live, ""];
+        $(prefix + "-live-time").textContent = parts[0];
+        $(prefix + "-live-ampm").textContent = parts[1];
+        const hour = partsInZone(now, zone).hour;
+        const greeting = hour >= 5 && hour < 12
+          ? ["Good morning!", "A fresh day is a fresh chance to make progress."]
+          : hour >= 12 && hour < 17
+            ? ["Good afternoon!", "Keep going—small steps add up to big progress."]
+            : hour >= 17 && hour < 21
+              ? ["Good evening!", "Take a moment to notice how far you’ve come."]
+              : ["Good night!", "Rest well—you can begin again tomorrow."];
+        $(prefix + "-greeting").textContent = greeting[0];
+        $(prefix + "-motivation").textContent = greeting[1];
+        $(prefix + "-live-time").parentElement.setAttribute(
+          "aria-label",
+          "Current time in " + (zones.find(([id]) => id === zone)?.[1] || zone) + ": " + live
+        );
+      }
+    }
+
+    let trendRequest = 0;
+
+    async function loadTrends() {
+      const request = ++trendRequest;
+      const selected = zones.find(([zone]) => zone === destinationSelect.value);
+      const [, label, geo] = selected;
+      const link = $("trends-link");
+      const list = $("trend-list");
+      const status = $("trend-status");
+      list.replaceChildren();
+
+      if (!geo) {
+        $("trend-region").textContent = "UTC has no single regional trend area. Choose a destination time zone tied to a country.";
+        link.href = "https://trends.google.com/trending";
+        link.hidden = true;
+        status.textContent = "Select a country-based time zone to see local trends.";
+        return;
+      }
+
+      $("trend-region").textContent = "Popular searches for " + label + " · " + geo;
+      link.href = "https://trends.google.com/trending?geo=" + encodeURIComponent(geo);
+      link.hidden = false;
+      status.textContent = "Loading popular searches…";
+
+      const feedUrl = "https://trends.google.com/trending/rss?geo=" + encodeURIComponent(geo);
+      const apiUrl = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(feedUrl);
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("Trend service returned HTTP " + response.status + ".");
+        const data = await response.json();
+        if (data.status !== "ok" || !Array.isArray(data.items)) {
+          throw new Error(data.message || "Trend service returned an unexpected response.");
+        }
+        if (request !== trendRequest) return;
+
+        for (const item of data.items.slice(0, 10)) {
+          if (typeof item.title !== "string" || !item.title.trim()) continue;
+          const entry = document.createElement("li");
+          entry.className = "trend-item";
+          const anchor = document.createElement("a");
+          anchor.href = "https://www.google.com/search?q=" + encodeURIComponent(item.title);
+          anchor.target = "_blank";
+          anchor.rel = "noopener noreferrer";
+          anchor.textContent = item.title;
+          entry.appendChild(anchor);
+          list.appendChild(entry);
+        }
+        status.textContent = list.children.length
+          ? "Updated " + new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date())
+          : "No popular searches were returned for this region right now.";
+      } catch (error) {
+        if (request !== trendRequest) return;
+        status.textContent = "Could not load live trends. Check your internet connection or open Google Trends directly.";
+        console.error("Could not load regional Google Trends:", error);
+      }
+    }
+
+    $("convert").addEventListener("click", convert);
+    $("now").addEventListener("click", setNow);
+    $("format").addEventListener("change", () => { convert(); updateLiveClocks(); });
+    sourceSelect.addEventListener("change", () => { convert(); updateLiveClocks(); });
+    destinationSelect.addEventListener("change", () => { convert(); updateLiveClocks(); loadTrends(); });
+    $("swap").addEventListener("click", () => {
+      [sourceSelect.value, destinationSelect.value] = [destinationSelect.value, sourceSelect.value];
+      convert();
+      updateLiveClocks();
+      loadTrends();
+    });
+    $("refresh-trends").addEventListener("click", loadTrends);
+
+    function updateClock() {
+      $("clock").textContent = "Your device time · " + new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium", timeStyle: "medium"
+      }).format(new Date());
+    }
+
+    setNow();
+    updateClock();
+    updateLiveClocks();
+    setInterval(updateClock, 1000);
+    setInterval(updateLiveClocks, 1000);
+    loadTrends();
+    setInterval(loadTrends, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
